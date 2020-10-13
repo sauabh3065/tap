@@ -11,15 +11,14 @@ const { msg } = require("../helpers/messages");
 const { password } = require("../../config");
 
 let registerAsDriver = async (req) => {
-  console.log(req.body, "here");
   let data = req.body;
-  data.roleId = 2;
+  data.roleId = 3;
   data.mobile = Number(data.mobile);
   // console.log(data.mobile);
   data.isMobileVerified = false;
 
   let pass = await md5(password);
-  console.log(pass, "hit");
+  //   console.log(pass, "hit");
   data.password = pass;
   if (
     !data.countryCode ||
@@ -52,9 +51,10 @@ let registerAsDriver = async (req) => {
     config.secret
   );
   result["token"] = token;
-
-  // let aa = await sendOtpDuringSignup(data.mobile, data.countryCode);
-
+  
+  //   let a = await sendOtpDuringSignup(data.mobile, data.countryCode);
+  
+  console.log(`${result.firstName} signup details ${result}`);
   return {
     response: result,
     message: msg.registrationSuccessfullAndOtpSentOnMobile,
