@@ -1,4 +1,7 @@
 const randomstring = require("randomstring");
+const jwt =require("jsonwebtoken");
+const config = require("../../config");
+
 
 exports.randomOtpGenerator = () => {
     let text = "";
@@ -22,3 +25,11 @@ exports.randomIdGenerator = () => {
     // let res = `ORD${text}${str}`;
     return `${text}${str}`;
 };
+
+//---------------------------------GENERATE TOKEN-----------------------------------------------------------------------------------------------------------------
+
+exports.generateToken  = (user) => {
+    return jwt.sign({user}, config.secret, { expiresIn: "18000s" });
+};
+
+//-------------------------------------SEnd otp---------------------------------------------------------------------------------------------------------------

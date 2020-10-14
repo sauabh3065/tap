@@ -29,7 +29,7 @@ const userRoute = require('./app/routes/user_route');
 
 
 app.use('/user', userRoute);
-app.use('/driver',driverRoute);
+app.use('/driver',driverRoute)
 
 // app.use("/driver",driverRoute);
 

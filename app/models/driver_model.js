@@ -1,33 +1,34 @@
 const mongoose = require("mongoose");
 
-const driverModel = new mongoose.Schema({
+const driverModel = new mongoose.Schema(
+  {
     firstName: String,
     lastName: String,
     profileImage: [String],
     isUserActive: {
-        type: Boolean,
-        default: true
+      type: Boolean,
+      default: true,
     },
     roleId: {
-        type: Number,  //Note: RoleId 1 for admin, 2 for user, 3 for driver
-        default: 2
+      type: Number, //Note: RoleId 1 for admin, 2 for user, 3 for driver
+      default: 2,
     },
     //.....................................
     email: {
-        type: String,
-        require: true
+      type: String,
+      require: true,
     },
     mobile: {
-        type: Number,
-        require: true
+      type: Number,
+      require: true,
     },
     countryCode: {
-        type: String,
-        require: true
+      type: String,
+      require: true,
     },
     isMobileVerified: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
     password: String,
     deviceType: Number, // 0 for Android, 1 for IOS
@@ -35,8 +36,8 @@ const driverModel = new mongoose.Schema({
     //......................................
 
     otpInfo: {
-        otp: String,
-        expTime: Date  //otp expiry time
+      otp: String,
+      expTime: Date, //otp expiry time
     },
 
     // country: {
@@ -49,34 +50,31 @@ const driverModel = new mongoose.Schema({
     // },
     //..................................
     location: {
-        type: {
-            type: String,
-            default: "Point"
-        },
-        coordinates: {
-            type: Array,
-            default: [0.01, 0.01]
-        }
+      type: {
+        type: String,
+        default: "Point",
+      },
+      coordinates: {
+        type: Array,
+        default: [0.01, 0.01],
+      },
     },
     latitude: String,
     longitude: String,
     //...................................
     isPushNotificationEnable: {
-        type: Boolean,
-        default: true
+      type: Boolean,
+      default: true,
     },
-
-},
-    {
-        versionKey: false,
-        timestamps: true
-    }
+  },
+  {
+    versionKey: false,
+    timestamps: true,
+  }
 );
 
+driverModel.index({ location: "2dsphere" });
 
-driverModel.index({ 'location': '2dsphere' });
-
-const drivers = mongoose.model('drivers', driverModel);
-
+const drivers = mongoose.model("drivers", driverModel);
 
 module.exports = { drivers };

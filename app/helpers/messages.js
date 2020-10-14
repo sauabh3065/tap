@@ -33,6 +33,9 @@ exports.msg = {
     passwordUpdated: "Password updated successfully",
     currentPasswordIsWrong: "Current password is wrong",
     oldPsswordInvalid: "Your old password dose not match.",
+    checkIdAndPass : "Please Check your email and password.",
+    passwordSame :"New password cannot be the same as old password.",
+    confirmpass : "New password and confirm password must be same",
 
     linkSend: "Link send on your email id",
     linkExpired: "Link expired",

@@ -1,24 +1,25 @@
 const { drivers } = require("../models/driver_model");
-
+const { generateToken } = require("../helpers/common_function");
+const bcrypt = require("bcrypt");
 const md5 = require("md5");
 const jwt = require("jsonwebtoken");
 const { ObjectId } = require("bson");
 
-const { randomOtpGenerator } = require("../helpers/common_function");
 const config = require("../../config");
 const { restrictedtokens } = require("../models/restricted_token_model");
 const { msg } = require("../helpers/messages");
-const { password } = require("../../config");
 
+//-------------------------------------------------------------------Register As Driver -------------------------------------------------------------------------------------------------------------------------------------------------------------
 let registerAsDriver = async (req) => {
+  //console.log(req.body,"here");
   let data = req.body;
   data.roleId = 3;
   data.mobile = Number(data.mobile);
   // console.log(data.mobile);
   data.isMobileVerified = false;
 
-  let pass = await md5(password);
-  //   console.log(pass, "hit");
+  let pass = await bcrypt.hash(req.body.password, 10);
+  // console.log(pass,"hit");
   data.password = pass;
   if (
     !data.countryCode ||
@@ -31,7 +32,7 @@ let registerAsDriver = async (req) => {
   //check if given number is already exist
   let isMobileExist = await drivers.findOne({ mobile: data.mobile }).lean();
   if (isMobileExist) throw { message: msg.mobileAlreadyExist };
-  //check if given number is already exist
+  //check if given number is alrMeady exist
   let isEmailExist = await drivers.findOne({ email: data.email }).lean();
   if (
     isEmailExist &&
@@ -40,25 +41,103 @@ let registerAsDriver = async (req) => {
   )
     throw { message: msg.emailAlreadyExist };
 
-  let res = new drivers(data);
-  let result = await res.save();
+  let checkDriver = new drivers(data);
+  let result = await checkDriver.save();
   /**
    * if Rider is registered without errors
    * create a token
    */
-  let token = jwt.sign(
-    { id: result._id, roleId: result.roleId },
-    config.secret
-  );
-  result["token"] = token;
-  
-  //   let a = await sendOtpDuringSignup(data.mobile, data.countryCode);
-  
-  console.log(`${result.firstName} signup details ${result}`);
+  // let token = jwt.sign({ id: result._id, roleId: result.roleId }, config.secret);
+  // result['token'] = token;
+
+  // let aa = await sendOtpDuringSignup(data.mobile, data.countryCode);
+  // console.log(result,"signup detailss")
   return {
     response: result,
     message: msg.registrationSuccessfullAndOtpSentOnMobile,
   };
 };
+//-------------------------------------------------------------------login drivers---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+let loginDriver = async (req) => {
+  let data = req.body;
 
-module.exports = { registerAsDriver };
+  let res = await drivers
+    .findOne({ mobile: data.mobile, countryCode: data.countryCode })
+    .lean();
+  console.log(res, "here");
+  if (!res || res === null) throw { message: msg.mobileNotExist };
+
+  //Check, if Account is deactivated then user can't login
+  if (res.isAccountDeactivated && res.isAccountDeactivated == true)
+    throw { message: msg.thisAccountIsDeactivated };
+
+  //Check if user is blocked or not
+  if (res.isBlockedByAdmin == true) throw { message: msg.blockedByAdmin };
+
+  let check = await bcrypt.compare(data.password, res.password);
+  console.log(check, "check");
+  if (!check) {
+    throw { message: msg.invalidPass };
+  }
+
+  let deviceToken = generateToken(check);
+  res["deviceToken"] = deviceToken;
+  console.log(deviceToken);
+
+  //Note: Also update "deviceType" and "deviceToken" during login
+  if (data.deviceToken) {
+    console.log("im hiting ");
+    let rr = await drivers.findByIdAndUpdate(
+      res._id,
+      {
+        $set: {
+          deviceType: data.deviceType,
+          deviceToken: data.deviceToken,
+        },
+      },
+      { new: true }
+    );
+  }
+  return {
+    response: res,
+    message: msg.loginSuccess,
+  };
+};
+
+//----------------------------------------------------Reset password --------------------------------------------------------------------------------------//
+
+let resetPasswordDriver = async (req) => {
+  let { password, confirmPassword, mobile } = req.body;
+  console.log(password, mobile); //remove
+  let driverData = await drivers.findOne({ mobile: mobile });
+  // confirmPassword = req.body.confirmPassword
+  console.log("driverdata", driverData.id, driverData);
+  // console.log(driverData,driverData[0].id,"drivers data");
+  if (!driverData) {
+    return msg.mobileNotExist;
+  }
+  let check = await bcrypt.compare(password, driverData.password);
+  if (check) {
+    return msg.passwordSame;
+  }
+
+  if (driverData) {
+    if (password === confirmPassword) {
+      let pass = await bcrypt.hash(password, 10);
+      updateData = await drivers.findOneAndUpdate(
+        { mobile:mobile },
+        { $set: { password: pass } },
+        { new: true }
+      );
+      if (updateData) {
+        return msg.passwordUpdated;
+      } else {
+        throw new Error("user not found");
+      }
+    }else{
+      return msg.confirmpass;
+    }
+  }
+};
+
+module.exports = { registerAsDriver, loginDriver, resetPasswordDriver };

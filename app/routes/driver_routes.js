@@ -1,4 +1,4 @@
-const { registerAsDriver } = require('../controllers/driver_contoller');
+const { registerAsDriver,loginDriver ,resetPasswordDriver} = require('../controllers/driver_contoller');
 
 const express = require('express');
 const route = express.Router();
@@ -9,7 +9,9 @@ const { joiForRegistration } = require('../middleware/joi');
 // const s3bucket = require('../helpers/aws-s3');
 
 
-route.post('/registerAsDriver', registerAsDriver);
+route.post('/registerAsDriver',joiForRegistration , registerAsDriver);
+route.post("/loginDriver",loginDriver);
+route.post("/resetPassword",resetPasswordDriver);
 // route.post('/loginUser', joiForRegistration, loginUser);
 // route.post('/logoutUser', joiForRegistration, logoutUser);
 
