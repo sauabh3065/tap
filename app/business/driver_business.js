@@ -1,5 +1,5 @@
 const { drivers } = require("../models/driver_model");
-const { generateToken } = require("../helpers/common_function");
+const { generateToken,randomOtpGenerator } = require("../helpers/common_function");
 const bcrypt = require("bcrypt");
 const md5 = require("md5");
 const jwt = require("jsonwebtoken");
@@ -140,4 +140,49 @@ let resetPasswordDriver = async (req) => {
   }
 };
 
-module.exports = { registerAsDriver, loginDriver, resetPasswordDriver };
+
+//-------------------------------------SEnd otp---------------------------------------------------------------------------------------------------------------
+
+let sendOtp = async (req) => {
+  let updateOtp;
+  console.log(req.body);
+  let data = req.body;
+  let otp = await randomOtpGenerator();
+  console.log(otp,"otp here");
+  let otpExpTime = new Date(Date.now() + config.defaultOTPExpireTime);
+  if (
+    data.mobile != null &&
+    data.mobile !== "" &&
+    data.countryCode !== null &&
+    data.countryCode != "NA"
+  ) {
+     updateOtp = await drivers.findOneAndUpdate(
+      { mobile: data.mobile, countryCode: data.countryCode },
+      { $set: {  otpInfo: { otp: otp, expTime: otpExpTime } } }
+    );
+  }
+  if (updateOtp){
+      return msg.otpSend;
+  }else{
+    throw new Error ("otp not saved");
+  }
+};
+//-------------------------------------verify otp---------------------------------------------------------------------------------------------------------------
+let verifyOtp = async (req) => {
+  let data = req.body;
+  let checkDriver = await drivers.findOne({mobile:data.mobile});
+  if(checkDriver){
+    if(checkDriver.otpInfo.otp === req.body.otp){
+      return msg.otpVerified;
+    }else{
+      return  msg.otpNotMatched;
+    }
+  }else{
+    return  msg.mobileNotExist;
+  }
+}
+
+
+
+
+module.exports = { registerAsDriver, loginDriver, resetPasswordDriver,sendOtp,verifyOtp };
