@@ -1,5 +1,8 @@
 const { drivers } = require("../models/driver_model");
-const { generateToken,randomOtpGenerator } = require("../helpers/common_function");
+const {
+  generateToken,
+  randomOtpGenerator,
+} = require("../helpers/common_function");
 const bcrypt = require("bcrypt");
 const md5 = require("md5");
 const jwt = require("jsonwebtoken");
@@ -58,37 +61,36 @@ let registerAsDriver = async (req) => {
   };
 };
 //-------------------------------------------------------------------login drivers---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 let loginDriver = async (req) => {
   let data = req.body;
-
-  let res = await drivers
-    .findOne({ mobile: data.mobile, countryCode: data.countryCode })
+  let checkDriver = await drivers
+    .findOne({ mobile: data.mobile, countryCode: data.countryCode })  //looking for a registered driver by its mobile 
     .lean();
-  console.log(res, "here");
-  if (!res || res === null) throw { message: msg.mobileNotExist };
+  if (!checkDriver || checkDriver === null) throw { message: msg.mobileNotExist };
 
   //Check, if Account is deactivated then user can't login
-  if (res.isAccountDeactivated && res.isAccountDeactivated == true)
+  if (checkDriver.isAccountDeactivated && checkDriver.isAccountDeactivated == true)
     throw { message: msg.thisAccountIsDeactivated };
 
   //Check if user is blocked or not
-  if (res.isBlockedByAdmin == true) throw { message: msg.blockedByAdmin };
+  if (checkDriver.isBlockedByAdmin == true) throw { message: msg.blockedByAdmin };
 
-  let check = await bcrypt.compare(data.password, res.password);
-  console.log(check, "check");
+  let check = await bcrypt.compare(data.password, checkDriver.password);
+  // console.log(check, "check");
   if (!check) {
     throw { message: msg.invalidPass };
-  }
+  } 
 
   let deviceToken = generateToken(check);
-  res["deviceToken"] = deviceToken;
-  console.log(deviceToken);
+  checkDriver["deviceToken"] = deviceToken;
+  // console.log(deviceToken);
 
   //Note: Also update "deviceType" and "deviceToken" during login
-  if (data.deviceToken) {
-    console.log("im hiting ");
+  if (data.deviceToken && data.deviceType) {
+    // console.log("im hiting ");
     let rr = await drivers.findByIdAndUpdate(
-      res._id,
+      checkDriver._id,
       {
         $set: {
           deviceType: data.deviceType,
@@ -99,7 +101,7 @@ let loginDriver = async (req) => {
     );
   }
   return {
-    response: res,
+    response: checkDriver,
     message: msg.loginSuccess,
   };
 };
@@ -125,7 +127,7 @@ let resetPasswordDriver = async (req) => {
     if (password === confirmPassword) {
       let pass = await bcrypt.hash(password, 10);
       updateData = await drivers.findOneAndUpdate(
-        { mobile:mobile },
+        { mobile: mobile },
         { $set: { password: pass } },
         { new: true }
       );
@@ -134,12 +136,11 @@ let resetPasswordDriver = async (req) => {
       } else {
         throw new Error("user not found");
       }
-    }else{
+    } else {
       return msg.confirmpass;
     }
   }
 };
-
 
 //-------------------------------------SEnd otp---------------------------------------------------------------------------------------------------------------
 
@@ -148,7 +149,7 @@ let sendOtp = async (req) => {
   console.log(req.body);
   let data = req.body;
   let otp = await randomOtpGenerator();
-  console.log(otp,"otp here");
+  console.log(otp, "otp here");
   let otpExpTime = new Date(Date.now() + config.defaultOTPExpireTime);
   if (
     data.mobile != null &&
@@ -156,33 +157,36 @@ let sendOtp = async (req) => {
     data.countryCode !== null &&
     data.countryCode != "NA"
   ) {
-     updateOtp = await drivers.findOneAndUpdate(
+    updateOtp = await drivers.findOneAndUpdate(
       { mobile: data.mobile, countryCode: data.countryCode },
-      { $set: {  otpInfo: { otp: otp, expTime: otpExpTime } } }
+      { $set: { otpInfo: { otp: otp, expTime: otpExpTime } } }
     );
   }
-  if (updateOtp){
-      return msg.otpSend;
-  }else{
-    throw new Error ("otp not saved");
+  if (updateOtp) {
+    return msg.otpSend;
+  } else {
+    throw new Error("otp not saved");
   }
 };
 //-------------------------------------verify otp---------------------------------------------------------------------------------------------------------------
 let verifyOtp = async (req) => {
   let data = req.body;
-  let checkDriver = await drivers.findOne({mobile:data.mobile});
-  if(checkDriver){
-    if(checkDriver.otpInfo.otp === req.body.otp){
+  let checkDriver = await drivers.findOne({ mobile: data.mobile });
+  if (checkDriver) {
+    if (checkDriver.otpInfo.otp === req.body.otp) {
       return msg.otpVerified;
-    }else{
-      return  msg.otpNotMatched;
+    } else {
+      return msg.otpNotMatched;
     }
-  }else{
-    return  msg.mobileNotExist;
+  } else {
+    return msg.mobileNotExist;
   }
-}
+};
 
-
-
-
-module.exports = { registerAsDriver, loginDriver, resetPasswordDriver,sendOtp,verifyOtp };
+module.exports = {
+  registerAsDriver,
+  loginDriver,
+  resetPasswordDriver,
+  sendOtp,
+  verifyOtp,
+};

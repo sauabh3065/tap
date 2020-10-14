@@ -6,14 +6,14 @@ const route = express.Router();
 
 const { verifyToken } = require('../middleware/jwt');
 
-const { joiForRegistration } = require('../middleware/joi');
+const { joiForRegistration,joiForlogin,joiForresetPasswordDriver} = require('../middleware/joi');
 const { verify } = require('jsonwebtoken');
 // const s3bucket = require('../helpers/aws-s3');
 
 
 route.post('/registerAsDriver',joiForRegistration , registerAsDriver);
-route.post("/loginDriver",loginDriver);
-route.put("/resetPassword",resetPasswordDriver);
+route.post("/loginDriver",joiForlogin,loginDriver);
+route.put("/resetPassword",joiForresetPasswordDriver,resetPasswordDriver);
 route.put("/sendotp",sendOtp);
 route.post("/verifyOtp",verifyOtp);
 // route.post('/loginUser', joiForRegistration, loginUser);

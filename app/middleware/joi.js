@@ -22,10 +22,42 @@ exports.joiForRegistration = (req, res, next) => {
     deviceToken: Joi.string(),
     email: Joi.string(),
     roleId: Joi.number(),
-    deviceType:Joi.number(),
+    deviceType: Joi.number(),
   });
 
   // validate the request data against the schema
+  const result = schema.validate(data, { abortEarly: true });
+  if (result.error) {
+    throw new Error(result.error);
+  }
+  next();
+};
+
+//-------------------------------------------------------------joi for login----------------------------------------------------------------------------------
+exports.joiForlogin = (req, res, next) => {
+  let data = req.body;
+  const schema = Joi.object().keys({
+    mobile: Joi.number().required(),
+    countryCode: Joi.number().required(),
+    password: Joi.string().required(),
+  });
+
+  // validate the request data against the schema
+  const result = schema.validate(data, { abortEarly: true });
+  if (result.error) {
+    throw new Error(result.error);
+  }
+  next();
+};
+
+//-----------------------------------------------------joi for resetPasswordDriver-------------------------------------------------------------------------------
+exports.joiForresetPasswordDriver = (req, res, next) => {
+  let data = req.body;
+  const schema = Joi.object().keys({
+    mobile: Joi.number().required(),
+    password: Joi.string().required(),
+    confirmPassword: Joi.string().required(),
+  });
   const result = schema.validate(data, { abortEarly: true });
   if (result.error) {
     throw new Error(result.error);
