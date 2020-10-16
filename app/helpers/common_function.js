@@ -40,7 +40,7 @@ exports.sendOtp = async (req, res) => {
   console.log(req.body);
   let data = req.body;
   let otp = await randomOtpGenerator();
-  console.log(otp,"otp here");
+  console.log(otp, "otp here");
   let otpExpTime = new Date(Date.now() + config.defaultOTPExpireTime);
   if (
     data.mobile != null &&
@@ -53,10 +53,9 @@ exports.sendOtp = async (req, res) => {
       { $set: { otpinfo: { otp: otp, expTime: otpExpTime } } }
     );
   }
-  if (updateOtp){
-      return msg.otpSend;
-  }else{
-    throw new Error ("otp not saved");
+  if (updateOtp) {
+    return msg.otpSend;
+  } else {
+    throw new Error("otp not saved");
   }
 };
-

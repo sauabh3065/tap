@@ -1,4 +1,4 @@
-const { registerAsDriver,loginDriver ,resetPasswordDriver,sendOtp,verifyOtp} = require('../controllers/driver_contoller');
+const { registerAsDriver,loginDriver ,resetPasswordDriver,verifyOtp,sendResendOtp} = require('../controllers/driver_contoller');
 
 
 const express = require('express');
@@ -14,8 +14,8 @@ const { verify } = require('jsonwebtoken');
 route.post('/registerAsDriver',joiForRegistration , registerAsDriver);
 route.post("/loginDriver",joiForlogin,loginDriver);
 route.put("/resetPassword",joiForresetPasswordDriver,resetPasswordDriver);
-route.put("/sendotp",sendOtp);
-route.post("/verifyOtp",verifyOtp);
+route.post("/verifyOtp",verifyToken,verifyOtp);
+route.post("/sendResendOtp",sendResendOtp);
 // route.post('/loginUser', joiForRegistration, loginUser);
 // route.post('/logoutUser', joiForRegistration, logoutUser);
 

@@ -11,6 +11,8 @@ const { ObjectId } = require("bson");
 const config = require("../../config");
 const { restrictedtokens } = require("../models/restricted_token_model");
 const { msg } = require("../helpers/messages");
+const { verifyToken } = require("../middleware/jwt");
+const { date } = require("joi");
 
 //-------------------------------------------------------------------Register As Driver -------------------------------------------------------------------------------------------------------------------------------------------------------------
 let registerAsDriver = async (req) => {
@@ -50,11 +52,11 @@ let registerAsDriver = async (req) => {
    * if Rider is registered without errors
    * create a token
    */
-  // let token = jwt.sign({ id: result._id, roleId: result.roleId }, config.secret);
-  // result['token'] = token;
+  let token = generateToken(checkDriver);
+  result["deviceToken"] = token;
 
-  // let aa = await sendOtpDuringSignup(data.mobile, data.countryCode);
-  // console.log(result,"signup detailss")
+  let aa = await sendOtpDuringSignup(data.mobile, data.countryCode);
+  console.log(result, "signup detailss");
   return {
     response: result,
     message: msg.registrationSuccessfullAndOtpSentOnMobile,
@@ -65,22 +67,27 @@ let registerAsDriver = async (req) => {
 let loginDriver = async (req) => {
   let data = req.body;
   let checkDriver = await drivers
-    .findOne({ mobile: data.mobile, countryCode: data.countryCode })  //looking for a registered driver by its mobile 
+    .findOne({ mobile: data.mobile, countryCode: data.countryCode }) //looking for a registered driver by its mobile
     .lean();
-  if (!checkDriver || checkDriver === null) throw { message: msg.mobileNotExist };
+  if (!checkDriver || checkDriver === null)
+    throw { message: msg.mobileNotExist };
 
   //Check, if Account is deactivated then user can't login
-  if (checkDriver.isAccountDeactivated && checkDriver.isAccountDeactivated == true)
+  if (
+    checkDriver.isAccountDeactivated &&
+    checkDriver.isAccountDeactivated == true
+  )
     throw { message: msg.thisAccountIsDeactivated };
 
   //Check if user is blocked or not
-  if (checkDriver.isBlockedByAdmin == true) throw { message: msg.blockedByAdmin };
+  if (checkDriver.isBlockedByAdmin == true)
+    throw { message: msg.blockedByAdmin };
 
   let check = await bcrypt.compare(data.password, checkDriver.password);
   // console.log(check, "check");
   if (!check) {
     throw { message: msg.invalidPass };
-  } 
+  }
 
   let deviceToken = generateToken(check);
   checkDriver["deviceToken"] = deviceToken;
@@ -144,21 +151,19 @@ let resetPasswordDriver = async (req) => {
 
 //-------------------------------------SEnd otp---------------------------------------------------------------------------------------------------------------
 
-let sendOtp = async (req) => {
+let sendOtpDuringSignup = async (mobileNum, countryCode) => {
   let updateOtp;
-  console.log(req.body);
-  let data = req.body;
   let otp = await randomOtpGenerator();
   console.log(otp, "otp here");
   let otpExpTime = new Date(Date.now() + config.defaultOTPExpireTime);
   if (
-    data.mobile != null &&
-    data.mobile !== "" &&
-    data.countryCode !== null &&
-    data.countryCode != "NA"
+    mobileNum != null &&
+    mobileNum !== "" &&
+    countryCode !== null &&
+    countryCode != "NA"
   ) {
     updateOtp = await drivers.findOneAndUpdate(
-      { mobile: data.mobile, countryCode: data.countryCode },
+      { mobile: mobileNum, countryCode: countryCode },
       { $set: { otpInfo: { otp: otp, expTime: otpExpTime } } }
     );
   }
@@ -168,25 +173,86 @@ let sendOtp = async (req) => {
     throw new Error("otp not saved");
   }
 };
-//-------------------------------------verify otp---------------------------------------------------------------------------------------------------------------
+//-------------------------------------verify otp ---------------------------------------------------------------------------------------------------------------
+
+//verify the otp during rider reg. and ch
+
 let verifyOtp = async (req) => {
-  let data = req.body;
-  let checkDriver = await drivers.findOne({ mobile: data.mobile });
-  if (checkDriver) {
-    if (checkDriver.otpInfo.otp === req.body.otp) {
-      return msg.otpVerified;
-    } else {
-      return msg.otpNotMatched;
-    }
+  console.log(req.user.user._id, "inside verifyotp");
+  let userId = req.user.user._id;
+  let checkDriver = await drivers.findById({ _id: userId });
+  if (!checkDriver || checkDriver === null) {
+    throw new Error({ message: msg.notExist });
+  }
+  let otp = checkDriver.otpInfo.otp;
+  let otpExpTime = checkDriver.otpInfo.expTime;
+  let currentTime = new Date(Date.now());
+  if (currentTime > otpExpTime) throw { message: msg.otpExpired };
+  if (otp != req.body.otp) {
+    throw { message: msg.otpNotMatched };
   } else {
-    return msg.mobileNotExist;
+    let r = await drivers.findOneAndUpdate(
+      { _id: userId },
+      {
+        $set: {
+          isMobileVerified: true,
+          otpInfo: { otp: null, expTime: Date.now() },
+        },
+      },
+      { new: true }
+    );
+    r = JSON.parse(JSON.stringify(r));
+    return {
+      message: msg.otpVerified,
+      response: {
+        isMobileVerified: r.isMobileVerified,
+      },
+    };
   }
 };
+
+//-----------------------------------------------------------SEND RESEND OTP-----------------------------------------------------------------------------------------------------------------------------------------------------
+let sendResendOtp = async (req) => {
+  let mobile = req.body.mobile;
+  let countryCode = req.body.countryCode;
+  // let sendOtp;
+  let otp = await randomOtpGenerator();
+  let otpExpTime = new Date(Date.now() + config.defaultOTPExpireTime);
+
+  if (
+    mobile == null &&
+    mobile == "" &&
+    countryCode == null &&
+    countryCode == ""
+  )
+    throw { message: msg.mobileNumAndCountryCodeRequire };
+  // let a = await sendMessageByTwillio(otp, req.body.mobile, countryCode);
+
+  let sendOtp = await drivers
+    .findOneAndUpdate(
+      { mobile: mobile, countryCode: countryCode },
+      { $set: { otpInfo: { otp: otp, expTime: otpExpTime } } },
+      { new: true }
+    )
+    .lean();
+  if (!sendOtp || sendOtp == null) throw { message: msg.mobileNotExist };
+
+  // let token = jwt.sign({ id: sendOtp._id, roleId: sendOtp.roleId }, config.secret);
+
+  let message = msg.otpSend;
+  // if (data.key == "resend") message = msg.otpResend;
+
+  return {
+    message: message,
+  };
+};
+//-----------------------------------------------------------------------------------------------------------------------------------
 
 module.exports = {
   registerAsDriver,
   loginDriver,
   resetPasswordDriver,
-  sendOtp,
+  sendOtpDuringSignup,
   verifyOtp,
+  sendResendOtp,
 };

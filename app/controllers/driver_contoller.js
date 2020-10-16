@@ -3,8 +3,8 @@ const {
   registerAsDriver,
   loginDriver,
   resetPasswordDriver,
-  sendOtp,
-  verifyOtp,
+  sendOtpDuringSignup,
+  verifyOtp,sendResendOtp
 } = require("../business/driver_business");
 
 exports.registerAsDriver = async (req, res) => {
@@ -43,7 +43,7 @@ exports.resetPasswordDriver = async (req, res) => {
   }
 };
 
-exports.sendOtp = async (req, res) => {
+exports.sendOtpDuringSignup = async (req, res) => {
   try {
     let r = await sendOtp(req);
     console.log(r, "here");
@@ -57,8 +57,19 @@ exports.sendOtp = async (req, res) => {
 
 exports.verifyOtp = async (req, res) => {
   try {
-    let r = await  verifyOtp(req);
+    let r = await verifyOtp(req);
     console.log(r, "here");
+    res.status(200).send(r);
+  } catch (err) {
+    console.log("inside catch");
+    console.log("Error is : " + err);
+    res.status(400).send(err);
+  }
+};
+
+exports.sendResendOtp = async (req, res) => {
+  try {
+    let r = await sendResendOtp(req);
     res.status(200).send(r);
   } catch (err) {
     console.log("inside catch");
