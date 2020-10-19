@@ -17,7 +17,7 @@ let verifyToken = (req, res, next) => {
     }
     // if everything is good, save to request for use in other routes
     req.user= decoded;
-    console.log(decoded,"here id")
+    // console.log(decoded,"here id")
     // req.roleId = decoded.roleId;
     next();
   });

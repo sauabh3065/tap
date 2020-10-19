@@ -4,8 +4,9 @@ const {
   loginDriver,
   resetPasswordDriver,
   sendOtpDuringSignup,
-  verifyOtp,sendResendOtp
+  verifyOtp,sendResendOtp,driverProfile
 } = require("../business/driver_business");
+const { drivers } = require("../models/driver_model");
 
 exports.registerAsDriver = async (req, res) => {
   try {
@@ -74,6 +75,17 @@ exports.sendResendOtp = async (req, res) => {
   } catch (err) {
     console.log("inside catch");
     console.log("Error is : " + err);
+    res.status(400).send(err);
+  }
+};
+
+exports.driverProfile =  async (req,res) =>{
+  try{console.log(req.user.user._id,"driver profile controler")
+    let r = await driverProfile(req.body,req.user.user._id,req.files);
+
+    res.status(200).send(r);
+  } catch (err) {
+    console.log("Error is :" + err);
     res.status(400).send(err);
   }
 };

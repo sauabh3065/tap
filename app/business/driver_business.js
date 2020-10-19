@@ -13,6 +13,7 @@ const { restrictedtokens } = require("../models/restricted_token_model");
 const { msg } = require("../helpers/messages");
 const { verifyToken } = require("../middleware/jwt");
 const { date } = require("joi");
+const { json } = require("body-parser");
 
 //-------------------------------------------------------------------Register As Driver -------------------------------------------------------------------------------------------------------------------------------------------------------------
 let registerAsDriver = async (req) => {
@@ -246,7 +247,75 @@ let sendResendOtp = async (req) => {
     message: message,
   };
 };
-//-----------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------DRIVER PROFILE-----------------------------------------------------------------------------------------
+let driverProfile = async(data,driverId,file)=>{
+
+  let checkExist = await drivers.findById(driverId);
+    checkExist = JSON.parse(JSON.stringify(checkExist));
+
+  if(!checkExist) throw { message: "Driver not found." };
+
+  if(file){
+    file.forEach(fl => {
+        if (fl.fieldname == 'driverImage'){ 
+          data.driverImage = `/userImage/${fl.filename}`
+        }else{
+          data.driverIdProof = `/userImage/${fl.filename}`
+        }
+        console.log(data.driverImage,data.driverIdProof,"hit")
+    })
+  }
+  data.isProfileCreated = 1
+  let updateProfile =await drivers.findByIdAndUpdate(driverId,data,{new: true}).lean()
+    updateProfile = JSON.parse(JSON.stringify(updateProfile));
+
+  if(!updateProfile) throw{message :'Failed to profile creation.'};
+
+  return{
+    response :updateProfile,
+    message :'Driver Profile created.'
+  }
+
+}
+
+
+
+
+
+
+
+
+// let driverProfile = async(data,driverId,file)=>{
+//   console.log(driverId,"id"); 
+//   let checkDriverExist = await drivers.findById(driverId);
+//   console.log(checkDriverExist,"dirver") //remove
+//   checkDriverExist = JSON.parse(JSON.stringify(checkDriverExist));
+//   if(!checkDriverExist) {
+//     throw {message : "DRIVER not found."};
+//   }
+//   if(file){
+//     file.forEach(f1 => {
+//       if(f1.filename === "driverImage"){
+//         data.driverImage = `/driverImage/${f1.filename}`
+//       }else {
+//         data.driverIdProof = `/driverImage/${f1.filename}`
+//       }
+//       console.log(data.driverImage,data.driverIdProof,"hit ");
+//     });
+//   }
+//   data.isProfileCreated = 1;
+//   let updateProfile = await drivers.findByIdAndUpdate(driverId,data,{new : true}).lean();
+//   updateProfile = JSON.parse(JSON.stringify(updateProfile));
+//   if(!updateProfile) {
+//     throw{message :'Failed to profile creation.'};
+//   }
+//   return{
+//     response : updateProfile,
+//     message : "Driver profile created"
+//   }
+// };
+
+
 
 module.exports = {
   registerAsDriver,
@@ -254,5 +323,5 @@ module.exports = {
   resetPasswordDriver,
   sendOtpDuringSignup,
   verifyOtp,
-  sendResendOtp,
+  sendResendOtp,driverProfile
 };

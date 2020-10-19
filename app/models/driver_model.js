@@ -1,10 +1,19 @@
+const { string, number } = require("joi");
 const mongoose = require("mongoose");
 
 const driverModel = new mongoose.Schema(
   {
-    firstName: String,
-    lastName: String,
-    profileImage: [String],
+    // firstName: String,
+    // lastName: String,
+    
+    serviceProviderType: String, // 1 for  freelance ,2 transpport driver // 3-towing driver
+    name: String,
+    gender: String, 
+    dob: {
+      type: Date,
+    },
+    driverImage: [String],
+    driverIdProof: [String],
     isUserActive: {
       type: Boolean,
       default: true,
