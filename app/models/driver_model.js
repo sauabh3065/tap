@@ -70,6 +70,17 @@ const driverModel = new mongoose.Schema(
     },
     latitude: String,
     longitude: String,
+    // -- driver address
+    houseNo: String,
+    buildinName : String,
+    localityName :String,
+    pincode : String,
+     // vehicel details
+     vehicleType :[String],
+     vehicleModel :String,
+     vehicleImage :[String],
+     driverLicense : [String],
+     vehicleRegCertificate :[String],
     //...................................
     isPushNotificationEnable: {
       type: Boolean,
@@ -80,6 +91,7 @@ const driverModel = new mongoose.Schema(
     versionKey: false,
     timestamps: true,
   }
+
 );
 
 driverModel.index({ location: "2dsphere" });

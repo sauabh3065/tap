@@ -4,7 +4,10 @@ const {
   loginDriver,
   resetPasswordDriver,
   sendOtpDuringSignup,
-  verifyOtp,sendResendOtp,driverProfile
+  verifyOtp,
+  sendResendOtp,
+  driverProfile,
+  driverAddress,vehicleDetails
 } = require("../business/driver_business");
 const { drivers } = require("../models/driver_model");
 
@@ -79,9 +82,35 @@ exports.sendResendOtp = async (req, res) => {
   }
 };
 
-exports.driverProfile =  async (req,res) =>{
-  try{console.log(req.user.user._id,"driver profile controler")
-    let r = await driverProfile(req.body,req.user.user._id,req.files);
+exports.driverProfile = async (req, res) => {
+  try {
+    console.log(req.user.user._id, "driver profile controler");
+    let r = await driverProfile(req.body, req.user.user._id, req.files);
+
+    res.status(200).send(r);
+  } catch (err) {
+    console.log("Error is :" + err);
+    res.status(400).send(err);
+  }
+};
+
+exports.driverAddress = async (req, res) => {
+  try {
+    console.log(req.user.user._id, "driver ADDRESS controler");
+    let r = await driverAddress(req.body, req.user.user._id);
+
+    res.status(200).send(r);
+  } catch (err) {
+    console.log("Error is :" + err);
+    res.status(400).send(err);
+  }
+};
+
+
+exports.vehicleDetails = async (req, res) => {
+  try {
+    console.log(req.user.user._id, "vehicle controler");
+    let r = await vehicleDetails(req.body, req.user.user._id, req.files);
 
     res.status(200).send(r);
   } catch (err) {

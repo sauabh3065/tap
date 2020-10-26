@@ -248,73 +248,92 @@ let sendResendOtp = async (req) => {
   };
 };
 //------------------------------------------DRIVER PROFILE-----------------------------------------------------------------------------------------
-let driverProfile = async(data,driverId,file)=>{
-
+let driverProfile = async (data, driverId, file) => {
   let checkExist = await drivers.findById(driverId);
-    checkExist = JSON.parse(JSON.stringify(checkExist));
+  checkExist = JSON.parse(JSON.stringify(checkExist));
 
-  if(!checkExist) throw { message: "Driver not found." };
+  if (!checkExist) throw { message: "Driver not found." };
 
-  if(file){
-    file.forEach(fl => {
-        if (fl.fieldname == 'driverImage'){ 
-          data.driverImage = `/userImage/${fl.filename}`
-        }else{
-          data.driverIdProof = `/userImage/${fl.filename}`
-        }
-        console.log(data.driverImage,data.driverIdProof,"hit")
-    })
+  if (file) {
+    file.forEach((fl) => {
+      if (fl.fieldname == "driverImage") {
+        data.driverImage = `/userImage/${fl.filename}`;
+      } else {
+        data.driverIdProof = `/userImage/${fl.filename}`;
+      }
+      console.log(data.driverImage, data.driverIdProof, "hit");
+    });
   }
-  data.isProfileCreated = 1
-  let updateProfile =await drivers.findByIdAndUpdate(driverId,data,{new: true}).lean()
-    updateProfile = JSON.parse(JSON.stringify(updateProfile));
+  data.isProfileCreated = 1;
+  let updateProfile = await drivers
+    .findByIdAndUpdate(driverId, data, { new: true })
+    .lean();
+  updateProfile = JSON.parse(JSON.stringify(updateProfile));
 
-  if(!updateProfile) throw{message :'Failed to profile creation.'};
+  if (!updateProfile) throw { message: "Failed to profile creation." };
 
+  return {
+    response: updateProfile,
+    message: "Driver Profile created.",
+  };
+};
+//------------------------------------------------DRIVERADDRESS------------------------------------------------------------------------------------------------------------------------//
+let driverAddress = async (data, driverId) => {
+  let checkExist = await drivers.findById(driverId);
+  checkExist = JSON.parse(JSON.stringify(checkExist));
+
+  if (!checkExist) throw { message: "Driver not Found !!!." };
+
+  data.location = {
+    type: "Point",
+    coordinates: [data.longitude, data.latitude],
+  };
+  let save = {
+    houseNo: data.houseNo,
+    buildinName: data.buildinName,
+    societyName: data.societyName,
+    pincode: data.pincode,
+  };
+  let updateAddress = await drivers
+    .findByIdAndUpdate(driverId, save, { new: true })
+    .lean();
+  updateAddress = JSON.parse(JSON.stringify(updateAddress));
+
+  if (!updateAddress) throw { message: "failed." };
+  return {
+    response: updateAddress,
+    message: "Address Details added successfully!!!.",
+  };
+};
+
+//---------------------------------------------------vechile DETAILS -------------------------------------------------------------------------------------------
+let vehicleDetails = async (data,driverId,file) =>{
+  let checkExist = await drivers.findById(driverId);
+  checkExist = JSON.parse(JSON.stringify(checkExist));
+
+  if (!checkExist) throw { message: "Driver not found." };
+
+  if (file) {
+    file.forEach((fl) => {
+      if (fl.fieldname == "vehicleImage") {
+        data.vehicleImage = `/userImage/${fl.filename}`;
+      }else if(fl.fieldname == 'driverLicense'){
+        data.driverLicense  = `/userImage/${fl.filename}`;
+      }else{
+        data.vehicleRegCertificate = `/userImage/${fl.filename}`
+      }
+      console.log(data.driverImage, data.driverIdProof, "hit");
+    });
+  }
+
+  let vehicleDetails = await drivers.findByIdAndUpdate(driverId,data,{new : true}).lean();
+  vehicleDetails = JSON.parse(JSON.stringify(vehicleDetails));
+  if(!vehicleDetails) throw{message :'Failed.'};
   return{
-    response :updateProfile,
-    message :'Driver Profile created.'
+    response :vehicleDetails,
+    message :'Vehicle Details created.'
   }
-
 }
-
-
-
-
-
-
-
-
-// let driverProfile = async(data,driverId,file)=>{
-//   console.log(driverId,"id"); 
-//   let checkDriverExist = await drivers.findById(driverId);
-//   console.log(checkDriverExist,"dirver") //remove
-//   checkDriverExist = JSON.parse(JSON.stringify(checkDriverExist));
-//   if(!checkDriverExist) {
-//     throw {message : "DRIVER not found."};
-//   }
-//   if(file){
-//     file.forEach(f1 => {
-//       if(f1.filename === "driverImage"){
-//         data.driverImage = `/driverImage/${f1.filename}`
-//       }else {
-//         data.driverIdProof = `/driverImage/${f1.filename}`
-//       }
-//       console.log(data.driverImage,data.driverIdProof,"hit ");
-//     });
-//   }
-//   data.isProfileCreated = 1;
-//   let updateProfile = await drivers.findByIdAndUpdate(driverId,data,{new : true}).lean();
-//   updateProfile = JSON.parse(JSON.stringify(updateProfile));
-//   if(!updateProfile) {
-//     throw{message :'Failed to profile creation.'};
-//   }
-//   return{
-//     response : updateProfile,
-//     message : "Driver profile created"
-//   }
-// };
-
 
 
 module.exports = {
@@ -323,5 +342,8 @@ module.exports = {
   resetPasswordDriver,
   sendOtpDuringSignup,
   verifyOtp,
-  sendResendOtp,driverProfile
+  sendResendOtp,
+  driverProfile,
+  driverAddress,
+  vehicleDetails
 };
